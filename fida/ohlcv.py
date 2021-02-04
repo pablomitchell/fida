@@ -9,7 +9,8 @@ class OHLCV(object):
 
     def __init__(self, symbols, start, end, cache='ohlcv'):
         """
-        Lightweight Tiingo OHLCV data download class
+        Lightweight Tiingo OHLCV data download class.  Must have
+        environment variable TIINGO_API_KEY set or authentication
 
         Parameters
         ----------
@@ -55,16 +56,17 @@ class OHLCV(object):
 
     def read(self):
         """
-        Downloads then caches price and volume data for a sequence of
-        symbols over a specified date range.
-
-        The resulting internal pandas.DataFrame has the following
-        index.level and column names:
+        Downloads price and volume data for a sequence of symbols
+        over a specified date range.  The resulting internal
+        pandas.DataFrame has the following index.level and column
+        names:
 
             - index.level : ('symbol', 'date')  # multi-index
             - columns:  ('close', 'high', 'low', 'open', 'volume',
                          'adjClose', 'adjHigh','adjLow', 'adjOpen', 'adjVolume',
                          'divCash', 'splitFactor')
+
+        Cache the data in a feather store for subsequent calls.
         """
         if os.path.isfile(self.store):
             return pd.read_feather(self.store).set_index(self.index_names)
@@ -79,20 +81,3 @@ class OHLCV(object):
         dr.close()
 
         return df
-
-
-if __name__ == '__main__':
-
-    symbols = [
-        'AAPL',
-        'MSFT',
-        'GOOG',
-    ]
-    start = '2020-01-01'
-    end = '2020-12-31'
-
-    ohlcv = OHLCV(symbols, start, end)
-    df = ohlcv.read()
-
-    close = df.adjClose.unstack().T
-    print(close.head())

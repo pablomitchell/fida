@@ -1,4 +1,8 @@
+bs4>=4.9.3
+lxml
 matplotlib>=3.3.4
 pandas>=1.2.1
 pandas-datareader==0.9.0
 pyarrow
+requests>=2.25.1
+setuptools>=49.6.0
