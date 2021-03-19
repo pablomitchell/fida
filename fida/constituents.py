@@ -3,6 +3,7 @@ Lightweight constituents functionality
 """
 
 import pandas as pd
+import pandas_datareader as pdr
 import requests
 from bs4 import BeautifulSoup
 
@@ -272,3 +273,19 @@ def get_psuedo_knuteson_index():
             'China',
         ],
     })
+
+
+def get_tiingo_common_stock_us(start, end):
+    qstr = (
+        f'(("{start}" <= startDate) or (startDate <= "{end}")) and '
+        f'(("{start}" <= endDate) or (endDate <= "{end}")) and '
+        f'((exchange == "NYSE") or (exchange == "NASDAQ")) and '
+        f'(assetType == "Stock") and '
+        f'(priceCurrency == "USD")'
+    )
+    symbols = pdr.tiingo.get_tiingo_symbols().query(qstr)
+    not_preferred_stock = ~symbols.ticker.str.contains('-P-')
+    symbols = symbols.loc[not_preferred_stock]
+
+    return symbols.ticker.dropna().sort_values().unique()
+

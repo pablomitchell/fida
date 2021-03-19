@@ -8,6 +8,133 @@ import os
 import pandas as pd
 import pandas_datareader as pdr
 
+from fida import mp
+
+
+class OHLCVError(ValueError):
+    pass
+
+
+class OHLCVSymbols(object):
+
+    def __init__(self):
+        self.symbols = (
+            pdr
+            .tiingo.get_tiingo_symbols()
+            .dropna()
+            .assign(start=lambda x: pd.to_datetime(x.startDate))
+            .assign(end=lambda x: pd.to_datetime(x.endDate))
+            .get(['ticker', 'start', 'end'])
+            .set_index('ticker')
+        )
+
+    def validate(self, symbol, start, end):
+        record = self.symbols.loc[symbol]
+
+        if not isinstance(record, pd.Series):
+            # means 'symbol' has valid data on multiple disjoint dates
+            # should handle this case but taking the easy way out for now
+            err = f'{symbol} is either empty or has multiple records'
+            raise OHLCVError(symbol)
+
+        if end < record.start or record.end < start:
+            err = f'only have {symbol} for: {record.start} to {record.end}'
+            raise OHLCVError(err)
+
+        record.start = max(record.start, start)
+        record.end = min(record.end, end)
+
+        args = record.to_dict()
+        args['symbols'] = symbol
+
+        return args
+
+
+OHLCV_SYMBOLS = OHLCVSymbols()
+
+
+class OHLCVSingle(object):
+
+    def __init__(self, symbol, start, end, cache='ohlcv'):
+        """
+        Single symbol Tiingo OHLCV data download class.  Must have
+        environment variable TIINGO_API_KEY set or authentication.
+
+        Parameters
+        ----------
+        symbol : string
+            company ticker
+        start : str or datetime.date compatible object
+            download data starting on this date
+        end : str or datetime.date compatible object
+            download data ending on this date
+        cache : str, default 'ohlcv'
+            defines the prefix of the cache directory
+                <cache>_<start>_<end>
+
+        """
+        self.symbol = symbol
+        self.start = pd.Timestamp(start)
+        self.end = pd.Timestamp(end)
+        self.cache = cache
+
+    @property
+    def cache(self):
+        return self._cache
+
+    @cache.setter
+    def cache(self, c):
+        start = self.start.strftime('%Y%m%d')
+        end = self.end.strftime('%Y%m%d')
+        cache = f'{c}_{start}_{end}'
+        os.makedirs(cache, exist_ok=True)
+        self._cache = cache
+
+    @property
+    def store(self):
+        return os.path.join(self.cache, f'{self.symbol}_ohlcv.feather')
+
+    def read(self):
+        """
+        Downloads price and volume data for a single symbol over a
+        specified date range.  The resulting internal pandas.DataFrame
+        has the following index and column names:
+            - index : 'date'
+            - columns:  ('close', 'high', 'low', 'open', 'volume',
+                         'adjClose', 'adjHigh','adjLow', 'adjOpen', 'adjVolume',
+                         'divCash', 'splitFactor')
+
+        Cache the data in a feather store for subsequent calls.
+        """
+        if os.path.isfile(self.store):
+            return pd.read_feather(self.store).set_index('date')
+
+        args = OHLCV_SYMBOLS.validate(
+            symbol=self.symbol,
+            start=self.start,
+            end=self.end,
+        )
+
+        dr = pdr.tiingo.TiingoDailyReader(**args)
+
+        try:
+            df = dr.read()
+        except Exception as e:
+            raise OHLCVError(e)
+
+        df = df.reset_index(level='symbol', drop=True)
+        df.reset_index().to_feather(self.store)
+        dr.close()
+
+        return df
+
+
+def _ohlcv_single(symbol, start, end):
+    try:
+        return OHLCVSingle(symbol, start, end).read()
+    except OHLCVError:
+        pass
+
 
 class OHLCVBatch(object):
 
@@ -75,86 +202,9 @@ class OHLCVBatch(object):
         if os.path.isfile(self.store):
             return pd.read_feather(self.store).set_index(self.index_names)
 
-        dr = pdr.tiingo.TiingoDailyReader(
-            symbols=self.symbols,
-            start=self.start,
-            end=self.end,
-        )
-        df = dr.read()
+        results = mp.amap(_ohlcv_single, self.symbols, start=self.start, end=self.end)
+        df = pd.concat(results, names=self.index_names)
         df.reset_index().to_feather(self.store)
-        dr.close()
-
-        return df
-
-
-class OHLCVSingle(object):
-
-    def __init__(self, symbol, start, end, cache='ohlcv'):
-        """
-        Single symbol Tiingo OHLCV data download class.  Must have
-        environment variable TIINGO_API_KEY set or authentication.
-
-        Parameters
-        ----------
-        symbol : string
-            company ticker
-        start : str or datetime.date compatible object
-            download data starting on this date
-        end : str or datetime.date compatible object
-            download data ending on this date
-        cache : str, default 'ohlcv'
-            defines the prefix of the cache directory
-                <cache>_<start>_<end>
-
-        """
-        self.symbol = symbol
-        self.start = pd.Timestamp(start)
-        self.end = pd.Timestamp(end)
-        self.cache = cache
-
-    @property
-    def cache(self):
-        return self._cache
-
-    @cache.setter
-    def cache(self, c):
-        start = self.start.strftime('%Y%m%d')
-        end = self.end.strftime('%Y%m%d')
-        cache = f'{c}_{start}_{end}'
-        os.makedirs(cache, exist_ok=True)
-        self._cache = cache
-
-    @property
-    def index_names(self):
-        return ['symbol', 'date']
-
-    @property
-    def store(self):
-        return os.path.join(self.cache, f'{self.symbol}_ohlcv.feather')
-
-    def read(self):
-        """
-        Downloads price and volume data for a single symbol over a
-        specified date range.  The resulting internal pandas.DataFrame
-        has the following index and column names:
-            - index : 'date'
-            - columns:  ('close', 'high', 'low', 'open', 'volume',
-                         'adjClose', 'adjHigh','adjLow', 'adjOpen', 'adjVolume',
-                         'divCash', 'splitFactor')
-
-        Cache the data in a feather store for subsequent calls.
-        """
-        if os.path.isfile(self.store):
-            return pd.read_feather(self.store).set_index('date')
-
-        dr = pdr.tiingo.TiingoDailyReader(
-            symbols=self.symbol,
-            start=self.start,
-            end=self.end,
-        )
-        df = dr.read().reset_index(level='symbol', drop=True)
-        df.reset_index().to_feather(self.store)
-        dr.close()
 
         return df
 
