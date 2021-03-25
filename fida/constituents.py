@@ -275,6 +275,53 @@ def get_psuedo_knuteson_index():
     })
 
 
+def get_short_term_bond_etfs():
+    """
+    Short-term Bond ETFs
+
+    Returns
+    -------
+    constituents : panda.DataFrame
+        columns:  ['ticker', 'name', 'bucket']
+
+    """
+    return pd.DataFrame({
+        'ticker': [
+            'BWZ',
+            'EMSH',
+            'ISHG',
+            'SCHO',
+            'SHY',
+            'SPTS',
+            'STIP',
+            'USFR',
+            'VGSH',
+        ],
+        'name': [
+            'SPDR Barclays Capital Short Term International Treasury Bond ETF',
+            'ProShares Short Term USD Emerging Markets Bond ETF',
+            'iShares 1-3 Year International Treasury Bond ETF',
+            'Schwab Short-Term U.S. Treasury ETF',
+            'iShares 1-3 Year Treasury Bond ETF',
+            'SPDR Portfolio Short Term Treasury ETF',
+            'iShares 0-5 Year TIPS Bond ETF',
+            'WisdomTree Bloomberg Floating Rate Treasury Fund',
+            'Vanguard Short-Term Treasury ETF',
+        ],
+        'bucket': [
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+        ],
+    })
+
+
 def get_tiingo_common_stock_us(start, end):
     qstr = (
         f'(("{start}" <= startDate) or (startDate <= "{end}")) and '
