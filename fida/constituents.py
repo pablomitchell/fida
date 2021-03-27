@@ -419,6 +419,7 @@ def get_tiingo_common_stock_us(start, end):
         f'(priceCurrency == "USD")'
     )
     symbols = pdr.tiingo.get_tiingo_symbols().query(qstr)
+
     not_preferred_stock = ~symbols.ticker.str.contains('-P-')
     symbols = symbols.loc[not_preferred_stock]
 
