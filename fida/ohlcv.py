@@ -123,6 +123,8 @@ class OHLCVSingle(object):
             raise OHLCVError(e)
 
         df = df.reset_index(level='symbol', drop=True)
+        is_weekday = ~df.index.day_name().str.startswith('S')
+        df = df[is_weekday]
         df.reset_index().to_feather(self.store)
         dr.close()
 
@@ -207,5 +209,3 @@ class OHLCVBatch(object):
         df.reset_index().to_feather(self.store)
 
         return df
-
-
