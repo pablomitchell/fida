@@ -275,9 +275,9 @@ def get_psuedo_knuteson_index():
     })
 
 
-def get_short_term_bond_etfs():
+def get_long_term_bond_us_etfs():
     """
-    Short-term Bond ETFs
+    Long-term Bond US ETFs
 
     Returns
     -------
@@ -287,9 +287,47 @@ def get_short_term_bond_etfs():
     """
     return pd.DataFrame({
         'ticker': [
-            'BWZ',
-            'EMSH',
-            'ISHG',
+            'EDV',
+            'LTPZ',
+            'SPTL',
+            'TLT',
+            'UBT',
+            'VGLT',
+            'ZROZ',
+        ],
+        'name': [
+            'Vanguard Ext Duration Treasury ETF',
+            'PIMCO 15 + Year US TIPS Index Fund',
+            'SPDR Portfolio Long Term Treasury ETF',
+            'iShares 20 + Year Treasury Bond ETF',
+            'ProShares Ultra 20 + Year Treasury',
+            'Vanguard Long - Term Treasury ETF',
+            'PIMCO 25 + Year Zero Coupon US Treasury Index Fund',
+        ],
+        'bucket': [
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+            'Fixed-Income',
+        ],
+    })
+
+
+def get_short_term_bond_us_etfs():
+    """
+    Short-term Bond US ETFs
+
+    Returns
+    -------
+    constituents : panda.DataFrame
+        columns:  ['ticker', 'name', 'bucket']
+
+    """
+    return pd.DataFrame({
+        'ticker': [
             'SCHO',
             'SHY',
             'SPTS',
@@ -298,9 +336,6 @@ def get_short_term_bond_etfs():
             'VGSH',
         ],
         'name': [
-            'SPDR Barclays Capital Short Term International Treasury Bond ETF',
-            'ProShares Short Term USD Emerging Markets Bond ETF',
-            'iShares 1-3 Year International Treasury Bond ETF',
             'Schwab Short-Term U.S. Treasury ETF',
             'iShares 1-3 Year Treasury Bond ETF',
             'SPDR Portfolio Short Term Treasury ETF',
@@ -315,9 +350,62 @@ def get_short_term_bond_etfs():
             'Fixed-Income',
             'Fixed-Income',
             'Fixed-Income',
-            'Fixed-Income',
-            'Fixed-Income',
-            'Fixed-Income',
+        ],
+    })
+
+
+def get_gold_etfs():
+    """
+    Gold ETFs
+
+    Returns
+    -------
+    constituents : panda.DataFrame
+        columns:  ['ticker', 'name', 'bucket']
+
+    """
+    return pd.DataFrame({
+        'ticker': [
+            'GLD',
+            'IAU',
+            'SGOL',
+            'UGL',
+            'DBP',
+            'DGP',
+            'DGL',
+            'GLL',
+            'DZZ',
+            'IGLD',
+            'BGLD',
+            'WGLD',
+        ],
+        'name': [
+            'SPDR Gold Trust',
+            'iShares Gold Trust',
+            'Aberdeen Standard Physical Gold Shares ETF',
+            'ProShares Ultra Gold',
+            'Invesco DB Precious Metals Fund',
+            'DB Gold Double Long ETN',
+            'Invesco DB Gold Fund',
+            'ProShares UltraShort Gold',
+            'DB Gold Double Short ETN',
+            'FT Cboe Vest Gold Strategy Target Income ETF',
+            'FT Cboe Vest Gold Strategy Quarterly Buffer ETF',
+            'Wilshire wShares Enhanced Gold Trust',
+        ],
+        'bucket': [
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
+            'Gold',
         ],
     })
 
@@ -335,4 +423,18 @@ def get_tiingo_common_stock_us(start, end):
     symbols = symbols.loc[not_preferred_stock]
 
     return symbols.ticker.dropna().sort_values().unique()
+
+
+def get_tiingo_etf_us(start, end):
+    qstr = (
+        f'(("{start}" <= startDate) or (startDate <= "{end}")) and '
+        f'(("{start}" <= endDate) or (endDate <= "{end}")) and '
+        f'((exchange == "NYSE") or (exchange == "NASDAQ")) and '
+        f'(assetType == "ETF") and '
+        f'(priceCurrency == "USD")'
+    )
+    symbols = pdr.tiingo.get_tiingo_symbols().query(qstr)
+
+    return symbols.ticker.dropna().sort_values().unique()
+
 
