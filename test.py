@@ -3,7 +3,7 @@ import matplotlib.pylab as plt
 
 from fida import constituents
 from fida import mp
-from fida import ohlcv
+from fida import meta
 
 
 plt.style.use('seaborn')
@@ -37,8 +37,7 @@ symbols = constituents.get_tiingo_common_stock_us(start, end)
 # df.info()
 
 
-df = ohlcv.OHLCVBatch(symbols, start, end).read()
-df.info()
+#df = meta.MetaSingle(symbols[0], start, end).read()
+df = meta.MetaBatch(symbols[:20], start, end).read()
+print(df.drop('description', axis=1).to_string())
 
-df.loc['AAPL'].get('adjClose').plot()
-plt.show()
