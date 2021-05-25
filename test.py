@@ -39,7 +39,7 @@ symbols = constituents.get_tiingo_common_stock_us(start, end)
 # df.info()
 
 
-df = meta.MetaBatch(symbols[:10], start, end).read()
+df = meta.MetaBatch(symbols, start, end).read()
 df.info()
 print(df.drop('description', axis=1).to_string())
 
