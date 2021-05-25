@@ -42,12 +42,11 @@ class MetaSingle(object):
 
     @property
     def columns(self):
-        return {
-            'name': 'name',
-            'description': 'description',
-            'ticker': 'symbol',
-            'exchangeCode': 'exchange',
-        }
+        return [
+            'name',
+            'description',
+            'exchangeCode',
+        ]
 
     @cache.setter
     def cache(self, c):
@@ -62,7 +61,6 @@ class MetaSingle(object):
         """
         Downloads meta data for a single symbol.  The resulting internal
         pandas.DataFrame has the following index and column names:
-            - index : 'symbol'
             - columns:  ('name', 'description', 'exchange')
 
         Cache the data in a feather store for subsequent calls.
@@ -82,14 +80,12 @@ class MetaSingle(object):
         except Exception as e:
             raise ValueError(e)
 
-        df = (
-            df
-            .transpose()
-            .get(self.columns.keys())
-            .rename(columns=self.columns)
-            .set_index('symbol')
-        )
-        df.reset_index().to_feather(self.store)
+        df = df.transpose().get(self.columns).reset_index(drop=True)
+
+        print(df.drop('description', axis=1).to_string())
+        print('-'*45)
+
+        df.to_feather(self.store)
         dr.close()
 
         return df
@@ -155,7 +151,8 @@ class MetaBatch(object):
 
         results = mp.amap(_meta_single, self.symbols, start=self.start, end=self.end)
 
-        df = pd.concat(results, index='symbol')
+        df = pd.concat(results).droplevel(1)
+        df.index.name = 'symbol'
         df.reset_index().to_feather(self.store)
 
         return df

@@ -81,7 +81,7 @@ class OHLCVSingle(object):
         except Exception as e:
             raise ValueError(e)
 
-        df = df.reset_index(level='symbol', drop=True)
+        df.reset_index(level='symbol', drop=True, inplace=True)
         is_weekday = ~df.index.day_name().str.startswith('S')
         df = df[is_weekday]
         df.reset_index().to_feather(self.store)
