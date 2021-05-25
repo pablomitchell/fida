@@ -81,10 +81,6 @@ class MetaSingle(object):
             raise ValueError(e)
 
         df = df.transpose().get(self.columns).reset_index(drop=True)
-
-        print(df.drop('description', axis=1).to_string())
-        print('-'*45)
-
         df.to_feather(self.store)
         dr.close()
 
