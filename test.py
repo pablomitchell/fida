@@ -14,7 +14,17 @@ start = '1990-01-01'
 end = '2020-12-31'
 
 # symbols = constituents.get_psuedo_knuteson_index().ticker
-symbols = constituents.get_tiingo_common_stock_us(start, end)
+# symbols = constituents.get_tiingo_common_stock_us(start, end)
+
+sp500_frame = constituents.get_sp500()
+print(sp500_frame.head().to_string())
+print(sp500_frame.tail().to_string())
+
+sp600_frame = constituents.get_sp600()
+print(sp600_frame.head().to_string())
+print(sp600_frame.tail().to_string())
+
+exit()
 
 # df = ohlcv.OHLCVBatch(symbols, start, end).read()
 # close = df.adjClose.unstack().T.SPY

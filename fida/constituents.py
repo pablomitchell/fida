@@ -2,10 +2,12 @@
 Lightweight constituents functionality
 """
 
+from collections import OrderedDict
+
 import pandas as pd
 import pandas_datareader as pdr
-import requests
-from bs4 import BeautifulSoup
+# import requests
+# from bs4 import BeautifulSoup
 
 
 def get_msci_eafe_country_etfs():
@@ -91,6 +93,31 @@ def get_msci_eafe_country_etfs():
     })
 
 
+# def get_sp500_OLD():
+#     """
+#     Scrape S&P 500 constituents from Wikipedia
+#
+#     Returns
+#     -------
+#     constituents : panda.DataFrame
+#         columns:  ['ticker', 'name', 'bucket']
+#
+#     """
+#     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+#     resp = requests.get(url)
+#     soup = BeautifulSoup(resp.text, 'lxml')
+#     table = soup.find('table', {'class': 'wikitable sortable'})
+#     ticker, name, bucket = [], [], []
+#
+#     for row in table.findAll('tr')[1:]:
+#         td = row.findAll('td')
+#         ticker.append(td[0].text.replace('.', '-').strip())
+#         name.append(td[1].text.strip())
+#         bucket.append(td[3].text.strip())
+#
+#     return pd.DataFrame({'ticker': ticker, 'name': name, 'bucket': bucket})
+
+
 def get_sp500():
     """
     Scrape S&P 500 constituents from Wikipedia
@@ -102,18 +129,18 @@ def get_sp500():
 
     """
     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
-    resp = requests.get(url)
-    soup = BeautifulSoup(resp.text, 'lxml')
-    table = soup.find('table', {'class': 'wikitable sortable'})
-    ticker, name, bucket = [], [], []
 
-    for row in table.findAll('tr')[1:]:
-        td = row.findAll('td')
-        ticker.append(td[0].text.replace('.', '-').strip())
-        name.append(td[1].text.strip())
-        bucket.append(td[3].text.strip())
+    rename = OrderedDict()
+    rename['Symbol'] = 'ticker'
+    rename['Security'] = 'name'
+    rename['GICS Sector'] = 'bucket'
 
-    return pd.DataFrame({'ticker': ticker, 'name': name, 'bucket': bucket})
+    frame_list = pd.read_html(url)
+
+    frame = frame_list[0].rename(columns=rename)
+    frame = frame.get(rename.values())
+
+    return frame
 
 
 def get_sp500_sector_etfs():
@@ -169,6 +196,31 @@ def get_sp500_sector_etfs():
     })
 
 
+# def get_sp600_OLD():
+#     """
+#     Scrape S&P 600 constituents from Wikipedia
+#
+#     Returns
+#     -------
+#     constituents : panda.DataFrame
+#         columns:  ['ticker', 'name', 'bucket']
+#
+#     """
+#     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_600_companies'
+#     resp = requests.get(url)
+#     soup = BeautifulSoup(resp.text, 'lxml')
+#     table = soup.find('table', {'class': 'wikitable sortable'})
+#     ticker, name, bucket = [], [], []
+#
+#     for row in table.findAll('tr')[1:]:
+#         td = row.findAll('td')
+#         ticker.append(td[1].text.replace('.', '-').strip())
+#         name.append(td[0].text.strip())
+#         bucket.append(td[3].text.strip())
+#
+#     return pd.DataFrame({'ticker': ticker, 'name': name, 'bucket': bucket})
+
+
 def get_sp600():
     """
     Scrape S&P 600 constituents from Wikipedia
@@ -180,18 +232,18 @@ def get_sp600():
 
     """
     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_600_companies'
-    resp = requests.get(url)
-    soup = BeautifulSoup(resp.text, 'lxml')
-    table = soup.find('table', {'class': 'wikitable sortable'})
-    ticker, name, bucket = [], [], []
 
-    for row in table.findAll('tr')[1:]:
-        td = row.findAll('td')
-        ticker.append(td[1].text.replace('.', '-').strip())
-        name.append(td[0].text.strip())
-        bucket.append(td[3].text.strip())
+    rename = OrderedDict()
+    rename['Ticker symbol'] = 'ticker'
+    rename['Company'] = 'name'
+    rename['GICS Sector'] = 'bucket'
 
-    return pd.DataFrame({'ticker': ticker, 'name': name, 'bucket': bucket})
+    frame_list = pd.read_html(url)
+
+    frame = frame_list[1].rename(columns=rename)
+    frame = frame.get(rename.values())
+
+    return frame
 
 
 def get_psuedo_knuteson_index():
