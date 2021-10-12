@@ -6,8 +6,6 @@ from collections import OrderedDict
 
 import pandas as pd
 import pandas_datareader as pdr
-# import requests
-# from bs4 import BeautifulSoup
 
 
 def get_msci_eafe_country_etfs():

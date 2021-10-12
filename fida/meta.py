@@ -66,7 +66,11 @@ class MetaSingle(object):
         Cache the data in a feather store for subsequent calls.
         """
         if os.path.isfile(self.store):
-            return pd.read_feather(self.store).set_index('symbol')
+            return (
+                pd.read_feather(self.store)
+                .rename(columns={'ticker': 'symbol'})
+                .set_index('symbol')
+            )
 
         args = SYMBOLS.validate(
             symbol=self.symbol,

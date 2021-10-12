@@ -6,6 +6,5 @@ pandas-datareader
 pyarrow
 scipy
 setuptools
-sklearn
-tdqm
+tqdm
 tiingo
