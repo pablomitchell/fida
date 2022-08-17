@@ -1,0 +1,11 @@
+lxml
+matplotlib
+numba
+numpy
+pandas
+pandas-datareader
+pyarrow
+scipy
+setuptools
+tqdm
+tiingo

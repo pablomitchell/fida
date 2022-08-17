@@ -14,7 +14,7 @@ from .util import SYMBOLS
 
 class OHLCVSingle(object):
 
-    def __init__(self, symbol, start, end, cache='ohlcv'):
+    def __init__(self, symbol, start, end, cache="ohlcv"):
         """
         Single symbol Tiingo OHLCV data download class.  Must have
         environment variable TIINGO_API_KEY set or authentication.
@@ -27,7 +27,7 @@ class OHLCVSingle(object):
             download data starting on this date
         end : str or datetime.date compatible object
             download data ending on this date
-        cache : str, default 'ohlcv'
+        cache : str, default "ohlcv"
             defines the prefix of the cache directory
                 <cache>_<start>_<end>
 
@@ -43,30 +43,30 @@ class OHLCVSingle(object):
 
     @cache.setter
     def cache(self, c):
-        start = self.start.strftime('%Y%m%d')
-        end = self.end.strftime('%Y%m%d')
-        cache = f'{c}_{start}_{end}'
+        start = self.start.strftime("%Y%m%d")
+        end = self.end.strftime("%Y%m%d")
+        cache = f"{c}_{start}_{end}"
         os.makedirs(cache, exist_ok=True)
         self._cache = cache
 
     @property
     def store(self):
-        return os.path.join(self.cache, f'{self.symbol}_ohlcv.feather')
+        return os.path.join(self.cache, f"{self.symbol}_ohlcv.feather")
 
     def read(self):
         """
         Downloads price and volume data for a single symbol over a
         specified date range.  The resulting internal pandas.DataFrame
         has the following index and column names:
-            - index : 'date'
-            - columns:  ('close', 'high', 'low', 'open', 'volume',
-                         'adjClose', 'adjHigh','adjLow', 'adjOpen', 'adjVolume',
-                         'divCash', 'splitFactor')
+            - index : "date"
+            - columns:  ("close", "high", "low", "open", "volume",
+                         "adjClose", "adjHigh","adjLow", "adjOpen", "adjVolume",
+                         "divCash", "splitFactor")
 
         Cache the data in a feather store for subsequent calls.
         """
         if os.path.isfile(self.store):
-            return pd.read_feather(self.store).set_index('date')
+            return pd.read_feather(self.store).set_index("date")
 
         args = SYMBOLS.validate(
             symbol=self.symbol,
@@ -81,8 +81,8 @@ class OHLCVSingle(object):
         except Exception as e:
             raise ValueError(e)
 
-        df.reset_index(level='symbol', drop=True, inplace=True)
-        is_weekday = ~df.index.day_name().str.startswith('S')
+        df.reset_index(level="symbol", drop=True, inplace=True)
+        is_weekday = ~df.index.day_name().str.startswith("S")
         df = df[is_weekday]
         df.reset_index().to_feather(self.store)
         dr.close()
@@ -99,7 +99,7 @@ def _ohlcv_single(symbol, start, end):
 
 class OHLCVBatch(object):
 
-    def __init__(self, symbols, start, end, cache='ohlcv'):
+    def __init__(self, symbols, start, end, cache="ohlcv"):
         """
         Multiple symbol Tiingo OHLCV data download class.  Must have
         environment variable TIINGO_API_KEY set or authentication.
@@ -112,7 +112,7 @@ class OHLCVBatch(object):
             download data starting on this date
         end : str or datetime.date compatible object
             download data ending on this date
-        cache : str, default 'ohlcv'
+        cache : str, default "ohlcv"
             defines the path to the cache directory
 
         """
@@ -132,19 +132,19 @@ class OHLCVBatch(object):
 
     @property
     def index_names(self):
-        return ['symbol', 'date']
+        return ["symbol", "date"]
 
     @property
     def store(self):
-        symbols = '-'.join(sorted(set(self.symbols)))
+        symbols = "-".join(sorted(set(self.symbols)))
 
-        start = self.start.strftime('%Y%m%d')
-        end = self.end.strftime('%Y%m%d')
+        start = self.start.strftime("%Y%m%d")
+        end = self.end.strftime("%Y%m%d")
 
-        input = f'{symbols}-{start}-{end}'
-        output = hashlib.md5(input.encode('utf-8')).hexdigest()
+        input = f"{symbols}-{start}-{end}"
+        output = hashlib.md5(input.encode("utf-8")).hexdigest()
 
-        return os.path.join(self.cache, f'tiingo-ohlcv-{output}.feather')
+        return os.path.join(self.cache, f"tiingo-ohlcv-{output}.feather")
 
     def read(self):
         """
@@ -153,10 +153,10 @@ class OHLCVBatch(object):
         pandas.DataFrame has the following index.level and column
         names:
 
-            - index.level : ('symbol', 'date')  # multi-index
-            - columns:  ('close', 'high', 'low', 'open', 'volume',
-                         'adjClose', 'adjHigh','adjLow', 'adjOpen', 'adjVolume',
-                         'divCash', 'splitFactor')
+            - index.level : ("symbol", "date")  # multi-index
+            - columns:  ("close", "high", "low", "open", "volume",
+                         "adjClose", "adjHigh","adjLow", "adjOpen", "adjVolume",
+                         "divCash", "splitFactor")
 
         Cache the data in a feather store for subsequent calls.
         """

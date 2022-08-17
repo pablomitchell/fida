@@ -1,35 +1,36 @@
+import warnings
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 import pandas as pd
 import matplotlib.pylab as plt
-
-from fida import constituents
-from fida import mp
-from fida import meta
-from fida import ohlcv
-from fida import meta
-
-
 plt.style.use('seaborn')
+
 
 start = '1990-01-01'
 end = '2020-12-31'
 
+symbols = [
+    "SPY",
+    "IWF",
+    "VTV",
+]
+
 # symbols = constituents.get_psuedo_knuteson_index().ticker
 # symbols = constituents.get_tiingo_common_stock_us(start, end)
+# symbols = constituents.get_tiingo_etf_us(start, end)
 
-sp500_frame = constituents.get_sp500()
-print(sp500_frame.head().to_string())
-print(sp500_frame.tail().to_string())
+# sp500_frame = constituents.get_sp500()
+# print(sp500_frame.head().to_string())
+# print(sp500_frame.tail().to_string())
 
-sp600_frame = constituents.get_sp600()
-print(sp600_frame.head().to_string())
-print(sp600_frame.tail().to_string())
+# sp600_frame = constituents.get_sp600()
+# print(sp600_frame.head().to_string())
+# print(sp600_frame.tail().to_string())
 
-exit()
-
-# df = ohlcv.OHLCVBatch(symbols, start, end).read()
-# close = df.adjClose.unstack().T.SPY
-# close.plot(title='SPY')
-# plt.show()
+df = ohlcv.OHLCVBatch(symbols, start, end).read()
+close = df.adjClose.unstack().T.SPY
+close.plot(title='SPY')
+plt.show()
 
 # df = ohlcv.OHLCVSingle('AAPL', start=start, end=end).read()
 # print(df.head().to_string())
