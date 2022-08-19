@@ -18,6 +18,7 @@ class Symbols(object):
     def validate(self, symbol, start, end):
         if symbol not in self.symbols:
             err = f"{symbol} not covered by fida"
+            raise ValueError(err)
 
         record = self.symbols.loc[symbol]
 
@@ -25,7 +26,7 @@ class Symbols(object):
             # means "symbol" has valid data on multiple disjoint dates
             # should handle this case but taking the easy way out for now
             err = f"{symbol} is either empty or has multiple records"
-            raise ValueError(symbol)
+            raise ValueError(err)
 
         if end < record.start or record.end < start:
             err = f"only have {symbol} for: {record.start} to {record.end}"
