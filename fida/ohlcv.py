@@ -164,6 +164,10 @@ class OHLCVBatch(object):
             return pd.read_feather(self.store).set_index(self.index_names)
 
         results = mp.amap(_ohlcv_single, self.symbols, start=self.start, end=self.end)
+
+        if not results:
+            return pd.DataFrame()
+
         df = pd.concat(results, names=self.index_names)
         df.reset_index().to_feather(self.store)
 
