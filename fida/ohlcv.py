@@ -167,7 +167,7 @@ class OHLCVBatch(object):
         results = {k: v for k, v in results.items() if v is not None}
 
         if not results:
-            return pd.DataFrame(columns=self.columns)
+            return pd.DataFrame(index=self.index, columns=self.columns)
 
         df = pd.concat(results, names=self.index_names)
         df.reset_index().to_feather(self.store)
@@ -176,17 +176,30 @@ class OHLCVBatch(object):
     
     @property
     def columns(self):
-        return [
-            "close",
-            "high",
-            "low",
-            "open",
-            "volume",
-            "adjClose",
-            "adjHigh",
-            "adjLow",
-            "adjOpen",
-            "adjVolume",
-            "divCash",
-            "splitFactor",
-        ]
+        return pd.Index(
+            [
+                "close",
+                "high",
+                "low",
+                "open",
+                "volume",
+                "adjClose",
+                "adjHigh",
+                "adjLow",
+                "adjOpen",
+                "adjVolume",
+                "divCash",
+                "splitFactor",
+            ]
+        )
+
+    @property
+    def index(self):
+        return pd.MultiIndex(
+            levels=[[], []],
+            codes=[[], []],
+            names=[
+                "date",
+                "symbol",
+            ]
+        )
