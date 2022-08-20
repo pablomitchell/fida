@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pylab as plt
 plt.style.use('seaborn')
 
+from fida import meta, ohlcv
 
 start = '1990-01-01'
 end = '2020-12-31'

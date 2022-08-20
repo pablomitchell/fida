@@ -167,9 +167,26 @@ class OHLCVBatch(object):
         results = {k: v for k, v in results.items() if v is not None}
 
         if not results:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=self.columns)
 
         df = pd.concat(results, names=self.index_names)
         df.reset_index().to_feather(self.store)
 
         return df
+    
+    @property
+    def columns(self):
+        return [
+            "close",
+            "high",
+            "low",
+            "open",
+            "volume",
+            "adjClose",
+            "adjHigh",
+            "adjLow",
+            "adjOpen",
+            "adjVolume",
+            "divCash",
+            "splitFactor",
+        ]
