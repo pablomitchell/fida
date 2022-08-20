@@ -150,6 +150,10 @@ class MetaBatch(object):
             return pd.read_feather(self.store).set_index('symbol')
 
         results = mp.amap(_meta_single, self.symbols, start=self.start, end=self.end)
+        results = {k: v for k, v in results.items() if v is not None}
+
+        if not results:
+            return pd.DataFrame()
 
         df = pd.concat(results).droplevel(1)
         df.index.name = 'symbol'

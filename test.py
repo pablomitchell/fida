@@ -28,10 +28,10 @@ symbols = [
 # print(sp600_frame.head().to_string())
 # print(sp600_frame.tail().to_string())
 
-df = ohlcv.OHLCVBatch(symbols, start, end).read()
-close = df.adjClose.unstack().T.SPY
-close.plot(title='SPY')
-plt.show()
+# df = ohlcv.OHLCVBatch(symbols, start, end).read()
+# close = df.adjClose.unstack().T.SPY
+# close.plot(title='SPY')
+# plt.show()
 
 # df = ohlcv.OHLCVSingle('AAPL', start=start, end=end).read()
 # print(df.head().to_string())
