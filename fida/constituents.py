@@ -476,6 +476,17 @@ def get_tiingo_common_stock_us(start, end):
     return symbols.ticker.dropna().sort_values().unique()
 
 
+def get_tiingo_etf(start, end):
+    qstr = (
+        "((@start <= startDate) or (startDate <= @end)) and "
+        "((@start <= endDate) or (endDate <= @end)) and "
+        "(assetType == 'ETF')"
+    )
+    symbols = pdr.tiingo.get_tiingo_symbols().query(qstr)
+
+    return symbols.ticker.dropna().sort_values().unique()
+
+
 def get_tiingo_etf_us(start, end):
     qstr = (
         "((@start <= startDate) or (startDate <= @end)) and "
