@@ -1,0 +1,13 @@
+-r requirements.txt
+-r requirements-test.txt
+better_exceptions
+black
+pip-tools
+iPython
+isort
+mypy
+pre-commit
+pycodestyle
+terminaltables
+tabulate
+types-ujson

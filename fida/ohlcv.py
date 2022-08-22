@@ -13,7 +13,6 @@ from .util import SYMBOLS
 
 
 class OHLCVSingle(object):
-
     def __init__(self, symbol, start, end, cache="ohlcv"):
         """
         Single symbol Tiingo OHLCV data download class.  Must have
@@ -98,7 +97,6 @@ def _ohlcv_single(symbol, start, end):
 
 
 class OHLCVBatch(object):
-
     def __init__(self, symbols, start, end, cache="ohlcv"):
         """
         Multiple symbol Tiingo OHLCV data download class.  Must have
@@ -164,7 +162,6 @@ class OHLCVBatch(object):
             return pd.read_feather(self.store).set_index(self.index_names)
 
         results = mp.amap(_ohlcv_single, self.symbols, start=self.start, end=self.end)
-        results = {k: v for k, v in results.items() if v is not None}
 
         if not results:
             return pd.DataFrame(index=self.index, columns=self.columns)
@@ -173,7 +170,7 @@ class OHLCVBatch(object):
         df.reset_index().to_feather(self.store)
 
         return df
-    
+
     @property
     def columns(self):
         return pd.Index(
@@ -201,5 +198,5 @@ class OHLCVBatch(object):
             names=[
                 "date",
                 "symbol",
-            ]
+            ],
         )

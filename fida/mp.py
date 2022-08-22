@@ -2,7 +2,7 @@
 Simple multi-processing tools
 """
 
-#from concurrent.futures import ProcessPoolExecutor
+# from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 
 from tqdm import tqdm
@@ -53,6 +53,10 @@ def amap(func, args, n_workers=None, **kwargs):
                 futures[arg] = pool.submit(func, arg, **kwargs)
                 futures[arg].add_done_callback(lambda p: progress.update())
 
-    results = {k: f.result() for k, f in futures.items() if k is not None}
+    results = {
+        k: f.result()
+        for k, f in futures.items()
+        if k is not None and f.result is not None
+    }
 
     return results

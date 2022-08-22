@@ -13,8 +13,7 @@ from .util import SYMBOLS
 
 
 class MetaSingle(object):
-
-    def __init__(self, symbol, start, end, cache='meta'):
+    def __init__(self, symbol, start, end, cache="meta"):
         """
         Single symbol Tiingo meta data download class.  Must have
         environment variable TIINGO_API_KEY set or authentication.
@@ -43,9 +42,9 @@ class MetaSingle(object):
     @property
     def columns(self):
         return [
-            'name',
-            'description',
-            'exchangeCode',
+            "name",
+            "description",
+            "exchangeCode",
         ]
 
     @cache.setter
@@ -55,7 +54,7 @@ class MetaSingle(object):
 
     @property
     def store(self):
-        return os.path.join(self.cache, f'{self.symbol}_meta.feather')
+        return os.path.join(self.cache, f"{self.symbol}_meta.feather")
 
     def read(self):
         """
@@ -66,10 +65,11 @@ class MetaSingle(object):
         Cache the data in a feather store for subsequent calls.
         """
         if os.path.isfile(self.store):
+            breakpoint()
             return (
                 pd.read_feather(self.store)
-                .rename(columns={'ticker': 'symbol'})
-                .set_index('symbol')
+                .rename(columns={"ticker": "symbol"})
+                .set_index("symbol")
             )
 
         args = SYMBOLS.validate(
@@ -83,6 +83,8 @@ class MetaSingle(object):
             df = dr.read()
         except Exception as e:
             raise ValueError(e)
+
+        breakpoint()
 
         df = df.transpose().get(self.columns).reset_index(drop=True)
         df.to_feather(self.store)
@@ -99,8 +101,7 @@ def _meta_single(symbol, start, end):
 
 
 class MetaBatch(object):
-
-    def __init__(self, symbols, start, end, cache='meta'):
+    def __init__(self, symbols, start, end, cache="meta"):
         """
         Multiple symbol Tiingo Meta data download class.  Must have
         environment variable TIINGO_API_KEY set or authentication.
@@ -133,9 +134,9 @@ class MetaBatch(object):
 
     @property
     def store(self):
-        input = '-'.join(sorted(set(self.symbols)))
-        output = hashlib.md5(input.encode('utf-8')).hexdigest()
-        return os.path.join(self.cache, f'tiingo-meta-{output}.feather')
+        input = "-".join(sorted(set(self.symbols)))
+        output = hashlib.md5(input.encode("utf-8")).hexdigest()
+        return os.path.join(self.cache, f"tiingo-meta-{output}.feather")
 
     def read(self):
         """
@@ -147,16 +148,15 @@ class MetaBatch(object):
         Cache the data in a feather store for subsequent calls.
         """
         if os.path.isfile(self.store):
-            return pd.read_feather(self.store).set_index('symbol')
+            return pd.read_feather(self.store).set_index("symbol")
 
         results = mp.amap(_meta_single, self.symbols, start=self.start, end=self.end)
-        results = {k: v for k, v in results.items() if v is not None}
 
         if not results:
             return pd.DataFrame()
 
         df = pd.concat(results).droplevel(1)
-        df.index.name = 'symbol'
+        df.index.name = "symbol"
         df.reset_index().to_feather(self.store)
 
         return df

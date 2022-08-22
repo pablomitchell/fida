@@ -1,19 +1,22 @@
 import warnings
+
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 import pandas as pd
 import matplotlib.pylab as plt
-plt.style.use('seaborn')
+
+plt.style.use("seaborn")
 
 from fida import meta, ohlcv
 
-start = '1990-01-01'
-end = '2020-12-31'
+start = "1990-01-01"
+end = "2020-12-31"
 
 symbols = [
     "SPY",
     "IWF",
     "VTV",
+    # "AAA",
 ]
 
 # symbols = constituents.get_psuedo_knuteson_index().ticker
@@ -51,9 +54,9 @@ symbols = [
 # df.info()
 
 
-df = meta.MetaBatch(symbols, start, end).read()
-df.info()
-print(df.drop('description', axis=1).to_string())
+df = meta.MetaSingle("AAA", start, end).read()
+# df = meta.MetaBatch(symbols, start, end).read()
+
 
 # df = ohlcv.OHLCVBatch(symbols[:10], start, end).read()
 # df.info()
