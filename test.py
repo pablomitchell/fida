@@ -16,7 +16,7 @@ symbols = [
     "SPY",
     "IWF",
     "VTV",
-    # "AAA",
+    "AAA",
 ]
 
 # symbols = constituents.get_psuedo_knuteson_index().ticker
@@ -54,8 +54,9 @@ symbols = [
 # df.info()
 
 
-df = meta.MetaSingle("AAA", start, end).read()
-# df = meta.MetaBatch(symbols, start, end).read()
+#df = meta.MetaSingle("AAA", start, end).read()
+df = meta.MetaBatch(symbols, start, end).read()
+print(df.drop("description", axis=1).to_string())
 
 
 # df = ohlcv.OHLCVBatch(symbols[:10], start, end).read()

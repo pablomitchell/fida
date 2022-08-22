@@ -65,12 +65,7 @@ class MetaSingle(object):
         Cache the data in a feather store for subsequent calls.
         """
         if os.path.isfile(self.store):
-            breakpoint()
-            return (
-                pd.read_feather(self.store)
-                .rename(columns={"ticker": "symbol"})
-                .set_index("symbol")
-            )
+            return pd.read_feather(self.store)
 
         args = SYMBOLS.validate(
             symbol=self.symbol,
@@ -83,8 +78,6 @@ class MetaSingle(object):
             df = dr.read()
         except Exception as e:
             raise ValueError(e)
-
-        breakpoint()
 
         df = df.transpose().get(self.columns).reset_index(drop=True)
         df.to_feather(self.store)
