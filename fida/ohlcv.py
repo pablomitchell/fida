@@ -1,202 +1,237 @@
-"""
-Financial Data module
-"""
+import asyncio
+import io
+import nest_asyncio
+import requests_cache
+import warnings
+from loguru import logger
+from typing import List, Union
 
-import hashlib
-import os
+from pyrate_limiter import Duration, RequestRate, Limiter, SQLiteBucket
+from requests import Session
+
+# from requests_cache import CacheMixin
+from requests_ratelimiter import LimiterMixin
 
 import pandas as pd
 import pandas_datareader as pdr
+import yfinance as yf
+from tqdm.auto import tqdm
 
-from . import mp
-from .util import SYMBOLS
+nest_asyncio.apply()
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
-class OHLCVSingle(object):
-    def __init__(self, symbol, start, end, cache="ohlcv"):
-        """
-        Single symbol Tiingo OHLCV data download class.  Must have
-        environment variable TIINGO_API_KEY set or authentication.
+class CachedLimiterSession(LimiterMixin, Session):
+    pass
 
-        Parameters
-        ----------
-        symbol : string
-            company ticker
-        start : str or datetime.date compatible object
-            download data starting on this date
-        end : str or datetime.date compatible object
-            download data ending on this date
-        cache : str, default "ohlcv"
-            defines the prefix of the cache directory
-                <cache>_<start>_<end>
 
-        """
-        self.symbol = symbol
-        self.start = pd.Timestamp(start)
-        self.end = pd.Timestamp(end)
-        self.cache = cache
+session_yahoo = CachedLimiterSession(
+    limiter=Limiter(
+        RequestRate(2, Duration.SECOND * 5),  # max 2 requests per 5 seconds
+        bucket_class=SQLiteBucket,
+        bucket_kwargs={"path": "yahoo.cache"},
+    )
+)
+session_tiingo = requests_cache.CachedSession(
+    cache_name="tiingo.cache", backend="sqlite"
+)
 
-    @property
-    def cache(self):
-        return self._cache
 
-    @cache.setter
-    def cache(self, c):
-        start = self.start.strftime("%Y%m%d")
-        end = self.end.strftime("%Y%m%d")
-        cache = f"{c}_{start}_{end}"
-        os.makedirs(cache, exist_ok=True)
-        self._cache = cache
+Symbols = Union[str, List[str]]
 
-    @property
-    def store(self):
-        return os.path.join(self.cache, f"{self.symbol}_ohlcv.feather")
 
-    def read(self):
-        """
-        Downloads price and volume data for a single symbol over a
-        specified date range.  The resulting internal pandas.DataFrame
-        has the following index and column names:
-            - index : "date"
-            - columns:  ("close", "high", "low", "open", "volume",
-                         "adjClose", "adjHigh","adjLow", "adjOpen", "adjVolume",
-                         "divCash", "splitFactor")
+async def read_symbol_yahoo_async(
+    symbol: str,
+    start: str,
+    end: str,
+    field: str,
+) -> pd.DataFrame:
+    """Read a single symbol"""
+    df = yf.Ticker(symbol, session=session_yahoo).history(
+        start=start,
+        end=end,
+    )
+    print(df)
 
-        Cache the data in a feather store for subsequent calls.
-        """
-        if os.path.isfile(self.store):
-            return pd.read_feather(self.store).set_index("date")
+    df = df.get(field).rename(symbol)
+    df.index = pd.to_datetime(df.index.date)
+    return df
 
-        args = SYMBOLS.validate(
-            symbol=self.symbol,
-            start=self.start,
-            end=self.end,
+
+async def read_symbols_yahoo_async(
+    symbols: Symbols, start: str, end: str, field: str
+) -> pd.DataFrame:
+    """Read a collection of symbols"""
+    if isinstance(symbols, str):
+        symbols = [symbols]
+
+    dfs = []
+    for symbol in tqdm(symbols, desc=f"Yahoo Download"):
+        df = await read_symbol_yahoo_async(
+            symbol=symbol, start=start, end=end, field=field
         )
 
-        dr = pdr.tiingo.TiingoDailyReader(**args)
+        if not df.empty:
+            dfs.append(df)
 
-        try:
-            df = dr.read()
-        except Exception as e:
-            raise ValueError(e)
-
-        df.reset_index(level="symbol", drop=True, inplace=True)
-        is_weekday = ~df.index.day_name().str.startswith("S")
-        df = df[is_weekday]
-        df.reset_index().to_feather(self.store)
-        dr.close()
-
-        return df
+    df = pd.concat(dfs, axis=1).sort_index(axis="columns")
+    return df
 
 
-def _ohlcv_single(symbol, start, end):
+def get_field_yahoo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    field: str,
+    interpolate: bool = True,
+) -> pd.DataFrame:
+    """Get a field for a collection of symbols"""
+    out = asyncio.run(
+        read_symbols_yahoo_async(symbols=symbols, start=start, end=end, field=field)
+    )
+
+    if interpolate:
+        out = out.interpolate(axis=0, method="pchip")
+
+    buffer = io.StringIO()
+    out.info(buf=buffer)
+    logger.info(f"\n{buffer.getvalue()}")
+
+    return out
+
+
+def get_price_yahoo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
+    return get_field_yahoo(symbols=symbols, start=start, end=end, field="Close")
+
+
+def get_volume_yahoo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
+    return get_field_yahoo(symbols=symbols, start=start, end=end, field="Volume")
+
+
+def get_return_yahoo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
+    return get_price_yahoo(symbols=symbols, start=start, end=end).pct_change().iloc[1:]
+
+
+# ----------------------------------------------------------------------------- #
+
+
+async def read_symbol_tiingo_async(
+    symbol: str,
+    start: str,
+    end: str,
+    field: str,
+) -> pd.DataFrame:
+    """Read a single symbol"""
     try:
-        return OHLCVSingle(symbol, start, end).read()
-    except ValueError:
-        pass
-
-
-class OHLCVBatch(object):
-    def __init__(self, symbols, start, end, cache="ohlcv"):
-        """
-        Multiple symbol Tiingo OHLCV data download class.  Must have
-        environment variable TIINGO_API_KEY set or authentication.
-
-        Parameters
-        ----------
-        symbols : seq
-            sequence of strings representing company tickers
-        start : str or datetime.date compatible object
-            download data starting on this date
-        end : str or datetime.date compatible object
-            download data ending on this date
-        cache : str, default "ohlcv"
-            defines the path to the cache directory
-
-        """
-        self.symbols = symbols
-        self.start = pd.Timestamp(start)
-        self.end = pd.Timestamp(end)
-        self.cache = cache
-
-    @property
-    def cache(self):
-        return self._cache
-
-    @cache.setter
-    def cache(self, c):
-        os.makedirs(c, exist_ok=True)
-        self._cache = c
-
-    @property
-    def index_names(self):
-        return ["symbol", "date"]
-
-    @property
-    def store(self):
-        symbols = "-".join(sorted(set(self.symbols)))
-
-        start = self.start.strftime("%Y%m%d")
-        end = self.end.strftime("%Y%m%d")
-
-        input = f"{symbols}-{start}-{end}"
-        output = hashlib.md5(input.encode("utf-8")).hexdigest()
-
-        return os.path.join(self.cache, f"tiingo-ohlcv-{output}.feather")
-
-    def read(self):
-        """
-        Downloads price and volume data for a sequence of symbols
-        over a specified date range.  The resulting internal
-        pandas.DataFrame has the following index.level and column
-        names:
-
-            - index.level : ("symbol", "date")  # multi-index
-            - columns:  ("close", "high", "low", "open", "volume",
-                         "adjClose", "adjHigh","adjLow", "adjOpen", "adjVolume",
-                         "divCash", "splitFactor")
-
-        Cache the data in a feather store for subsequent calls.
-        """
-        if os.path.isfile(self.store):
-            return pd.read_feather(self.store).set_index(self.index_names)
-
-        results = mp.amap(_ohlcv_single, self.symbols, start=self.start, end=self.end)
-
-        if not results:
-            return pd.DataFrame(index=self.index, columns=self.columns)
-
-        df = pd.concat(results, names=self.index_names)
-        df.reset_index().to_feather(self.store)
-
+        df = pdr.get_data_tiingo(
+            symbol,
+            start=start,
+            end=end,
+            session=session_tiingo,
+        )
+    except KeyError:
+        logger.warning(f"Symbol {symbol} not found")
+        return pd.DataFrame()
+    else:
+        df = df.get(field).droplevel(0).rename(symbol)
+        df.index = pd.to_datetime(df.index.date)
         return df
 
-    @property
-    def columns(self):
-        return pd.Index(
-            [
-                "close",
-                "high",
-                "low",
-                "open",
-                "volume",
-                "adjClose",
-                "adjHigh",
-                "adjLow",
-                "adjOpen",
-                "adjVolume",
-                "divCash",
-                "splitFactor",
-            ]
+
+async def read_symbols_tiingo_async(
+    symbols: Symbols, start: str, end: str, field: str
+) -> pd.DataFrame:
+    """Read a collection of symbols"""
+    if isinstance(symbols, str):
+        symbols = [symbols]
+
+    dfs = []
+    for symbol in tqdm(symbols, desc=f"Tiingo Download"):
+        df = await read_symbol_tiingo_async(
+            symbol=symbol, start=start, end=end, field=field
         )
 
-    @property
-    def index(self):
-        return pd.MultiIndex(
-            levels=[[], []],
-            codes=[[], []],
-            names=[
-                "date",
-                "symbol",
-            ],
+        if not df.empty:
+            dfs.append(df)
+
+    df = pd.concat(dfs, axis=1).sort_index(axis="columns")
+    return df
+
+
+def get_field_tiingo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    field: str,
+    interpolate: bool = True,
+) -> pd.DataFrame:
+    """Get a field for a collection of symbols"""
+    out = asyncio.run(
+        read_symbols_tiingo_async(symbols=symbols, start=start, end=end, field=field)
+    )
+
+    if interpolate:
+        out = out.interpolate(axis=0, method="pchip")
+
+    buffer = io.StringIO()
+    out.info(buf=buffer)
+    logger.info(f"\n{buffer.getvalue()}")
+
+    return out
+
+
+def get_price_tiingo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
+    return get_field_tiingo(symbols=symbols, start=start, end=end, field="adjClose")
+
+
+def get_volume_tiingo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
+    return get_field_tiingo(symbols=symbols, start=start, end=end, field="adjVolume")
+
+
+def get_return_tiingo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
+    return get_price_tiingo(symbols=symbols, start=start, end=end).pct_change().iloc[1:]
+
+
+# ----------------------------------------------------------------------------- #
+
+
+async def read_msymbol_tiingo_async(symbol: str, start: str, end: str) -> pd.Series:
+    out = (
+        pdr.tiingo.TiingoMetaDataReader(
+            symbol,
+            start=start,
+            end=end,
+            session=session,
         )
+        .read()
+        .squeeze()
+    )
+    return out
+
+
+async def read_msymbols_tiingo_async(
+    symbols: Symbols, start: str, end: str
+) -> pd.DataFrame:
+    out = {}
+
+    if isinstance(symbols, str):
+        symbols = [symbols]
+
+    for symbol in tqdm(symbols, desc=f"Tiingo Download"):
+        out[symbol] = await read_msymbol_tiingo_async(
+            symbol=symbol, start=start, end=end
+        )
+
+    out = pd.DataFrame(out)
+    return out
+
+
+def get_meta(symbols: Symbols, start: str, end: str) -> pd.Series:
+    out = asyncio.run(read_msymbols_tiingo_async(symbols=symbols, start=start, end=end))
+    out = out.transpose()
+
+    buffer = io.StringIO()
+    out.info(buf=buffer)
+    logger.info(f"\n{buffer.getvalue()}")
+
+    return out

@@ -1,11 +1,16 @@
+loguru
 lxml
 matplotlib
+nest_asyncio
 numba
 numpy
 pandas
 pandas-datareader
-pyarrow
+pyrate_limiter
+requests_cache
+requests_ratelimiter
 scipy
 setuptools
 tqdm
 tiingo
+yfinance
