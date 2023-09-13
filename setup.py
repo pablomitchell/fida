@@ -16,7 +16,7 @@ setup(
         "nest_asyncio",
         "numba",
         "numpy",
-        "pandas",
+        "pandas<=1.5",
         "pandas-datareader",
         "pyrate_limiter",
         "requests_cache",
