@@ -9,7 +9,6 @@ from typing import List, Union
 from pyrate_limiter import Duration, RequestRate, Limiter, SQLiteBucket
 from requests import Session
 
-# from requests_cache import CacheMixin
 from requests_ratelimiter import LimiterMixin
 
 import pandas as pd
@@ -81,11 +80,16 @@ def get_field_yahoo(
     start: str,
     end: str,
     field: str,
-    interpolate: bool = True,
+    interpolate: bool = False,
 ) -> pd.DataFrame:
     """Get a field for a collection of symbols"""
     out = asyncio.run(
-        read_symbols_yahoo_async(symbols=symbols, start=start, end=end, field=field)
+        read_symbols_yahoo_async(
+            symbols=symbols,
+            start=start,
+            end=end,
+            field=field,
+        )
     )
 
     if interpolate:
@@ -98,16 +102,52 @@ def get_field_yahoo(
     return out
 
 
-def get_price_yahoo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
-    return get_field_yahoo(symbols=symbols, start=start, end=end, field="Close")
+def get_price_yahoo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    interpolate: bool = False,
+) -> pd.DataFrame:
+    return get_field_yahoo(
+        symbols=symbols,
+        start=start,
+        end=end,
+        field="Close",
+        interpolate=interpolate,
+    )
 
 
-def get_volume_yahoo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
-    return get_field_yahoo(symbols=symbols, start=start, end=end, field="Volume")
+def get_volume_yahoo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    interpolate: bool = False,
+) -> pd.DataFrame:
+    return get_field_yahoo(
+        symbols=symbols,
+        start=start,
+        end=end,
+        field="Volume",
+        interpolate=interpolate,
+    )
 
 
-def get_return_yahoo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
-    return get_price_yahoo(symbols=symbols, start=start, end=end).pct_change().iloc[1:]
+def get_return_yahoo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    interpolate: bool = False,
+) -> pd.DataFrame:
+    return (
+        get_price_yahoo(
+            symbols=symbols,
+            start=start,
+            end=end,
+            interpolate=interpolate,
+        )
+        .pct_change()
+        .iloc[1:]
+    )
 
 
 # ----------------------------------------------------------------------------- #
@@ -146,7 +186,10 @@ async def read_symbols_tiingo_async(
     dfs = []
     for symbol in tqdm(symbols, desc=f"Tiingo Download"):
         df = await read_symbol_tiingo_async(
-            symbol=symbol, start=start, end=end, field=field
+            symbol=symbol,
+            start=start,
+            end=end,
+            field=field,
         )
 
         if not df.empty:
@@ -266,7 +309,13 @@ async def read_msymbols_tiingo_async(
 
 
 def get_meta(symbols: Symbols, start: str, end: str) -> pd.Series:
-    out = asyncio.run(read_msymbols_tiingo_async(symbols=symbols, start=start, end=end))
+    out = asyncio.run(
+        read_msymbols_tiingo_async(
+            symbols=symbols,
+            start=start,
+            end=end,
+        )
+    )
     out = out.transpose()
 
     buffer = io.StringIO()
