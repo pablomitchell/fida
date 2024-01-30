@@ -11,6 +11,7 @@ from requests import Session
 
 from requests_ratelimiter import LimiterMixin
 
+import numpy as np
 import pandas as pd
 import pandas_datareader as pdr
 import yfinance as yf
@@ -137,17 +138,19 @@ def get_return_yahoo(
     start: str,
     end: str,
     interpolate: bool = False,
+    log: bool = False,
 ) -> pd.DataFrame:
-    return (
-        get_price_yahoo(
-            symbols=symbols,
-            start=start,
-            end=end,
-            interpolate=interpolate,
-        )
-        .pct_change()
-        .iloc[1:]
+    prices = get_price_yahoo(
+        symbols=symbols,
+        start=start,
+        end=end,
+        interpolate=interpolate,
     )
+
+    if log:
+        return np.log(prices).diff()
+    else:
+        return prices.pct_change()
 
 
 # ----------------------------------------------------------------------------- #
@@ -261,17 +264,19 @@ def get_return_tiingo(
     start: str,
     end: str,
     interpolate: bool = False,
+    log: bool = False,
 ) -> pd.DataFrame:
-    return (
-        get_price_tiingo(
-            symbols=symbols,
-            start=start,
-            end=end,
-            interpolate=interpolate,
-        )
-        .pct_change()
-        .iloc[1:]
+    prices = get_price_tiingo(
+        symbols=symbols,
+        start=start,
+        end=end,
+        interpolate=interpolate,
     )
+
+    if log:
+        return np.log(prices).diff()
+    else:
+        return prices.pct_change()
 
 
 # ----------------------------------------------------------------------------- #
