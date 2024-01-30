@@ -1,8 +1,8 @@
 import warnings
 
-from fida import constituents, ohlcv
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
+
+from fida import constituents, ohlcv
 
 
 params = {
@@ -11,14 +11,13 @@ params = {
     "end": "2020-12-31",
     "interpolate": True,
 }
-
-sp_subset_prices = ohlcv.get_price_tiingo(**params)
-sp_subset_returns = ohlcv.get_return_tiingo(**params)
+prices = ohlcv.get_price_tiingo(**params)
+returns = ohlcv.get_return_tiingo(**params)
 
 print("PRICES")
-print(sp_subset_prices.head().to_string())
-print(sp_subset_prices.tail().to_string())
+print(prices.head().to_string())
+print(prices.tail().to_string())
 print("-" * 80)
 print("RETURNS")
-print(sp_subset_returns.head().to_string())
-print(sp_subset_returns.tail().to_string())
+print(returns.head().to_string())
+print(returns.tail().to_string())
