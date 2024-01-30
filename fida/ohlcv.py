@@ -51,8 +51,6 @@ async def read_symbol_yahoo_async(
         start=start,
         end=end,
     )
-    print(df)
-
     df = df.get(field).rename(symbol)
     df.index = pd.to_datetime(df.index.date)
     return df
@@ -163,11 +161,16 @@ def get_field_tiingo(
     start: str,
     end: str,
     field: str,
-    interpolate: bool = True,
+    interpolate: bool = False,
 ) -> pd.DataFrame:
     """Get a field for a collection of symbols"""
     out = asyncio.run(
-        read_symbols_tiingo_async(symbols=symbols, start=start, end=end, field=field)
+        read_symbols_tiingo_async(
+            symbols=symbols,
+            start=start,
+            end=end,
+            field=field,
+        )
     )
 
     if interpolate:
@@ -180,16 +183,52 @@ def get_field_tiingo(
     return out
 
 
-def get_price_tiingo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
-    return get_field_tiingo(symbols=symbols, start=start, end=end, field="adjClose")
+def get_price_tiingo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    interpolate: bool = False,
+) -> pd.DataFrame:
+    return get_field_tiingo(
+        symbols=symbols,
+        start=start,
+        end=end,
+        field="adjClose",
+        interpolate=interpolate,
+    )
 
 
-def get_volume_tiingo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
-    return get_field_tiingo(symbols=symbols, start=start, end=end, field="adjVolume")
+def get_volume_tiingo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    interpolate: bool = False,
+) -> pd.DataFrame:
+    return get_field_tiingo(
+        symbols=symbols,
+        start=start,
+        end=end,
+        field="adjVolume",
+        interpolate=interpolate,
+    )
 
 
-def get_return_tiingo(symbols: Symbols, start: str, end: str) -> pd.DataFrame:
-    return get_price_tiingo(symbols=symbols, start=start, end=end).pct_change().iloc[1:]
+def get_return_tiingo(
+    symbols: Symbols,
+    start: str,
+    end: str,
+    interpolate: bool = False,
+) -> pd.DataFrame:
+    return (
+        get_price_tiingo(
+            symbols=symbols,
+            start=start,
+            end=end,
+            interpolate=interpolate,
+        )
+        .pct_change()
+        .iloc[1:]
+    )
 
 
 # ----------------------------------------------------------------------------- #
@@ -201,7 +240,7 @@ async def read_msymbol_tiingo_async(symbol: str, start: str, end: str) -> pd.Ser
             symbol,
             start=start,
             end=end,
-            session=session,
+            session=session_tiingo,
         )
         .read()
         .squeeze()
