@@ -12,7 +12,7 @@ params = {
     "interpolate": True,
 }
 prices = ohlcv.get_price_tiingo(**params)
-returns = ohlcv.get_return_tiingo(**params)
+returns = ohlcv.get_return_tiingo(log=True, **params)
 
 print("PRICES")
 print(prices.head().to_string())
