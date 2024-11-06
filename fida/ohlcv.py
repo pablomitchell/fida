@@ -17,9 +17,12 @@ import pandas_datareader as pdr
 import yfinance as yf
 from tqdm.auto import tqdm
 
+from fida.patches import patch_pandas_datareader
+
 nest_asyncio.apply()
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
+patch_pandas_datareader()
 
 class CachedLimiterSession(LimiterMixin, Session):
     pass

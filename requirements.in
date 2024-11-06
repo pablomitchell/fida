@@ -2,12 +2,10 @@ loguru
 lxml
 matplotlib
 nest_asyncio
-# numba
 numpy
-# pandas<=1.5
-pandas
-pandas-datareader
-pyrate_limiter
+pandas>=2.0.0
+pandas_datareader>=0.10.0
+pyrate_limiter==2.6.0
 requests_cache
 requests_ratelimiter
 scipy
