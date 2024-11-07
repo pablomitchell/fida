@@ -9,3 +9,8 @@ pre-commit
 terminaltables
 tabulate
 types-ujson
+pandas-stubs
+types-requests
+types-setuptools
+types-tqdm
+types-urllib3

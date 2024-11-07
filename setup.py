@@ -40,6 +40,15 @@ setup(
             "terminaltables>=3.1.10",
             "tabulate>=0.9.0",
             "types-ujson>=5.9.0",
+            "pandas-stubs>=2.2.0",
+            "types-requests>=2.31.0.20240125",
+            "types-setuptools>=69.0.0",
+            "types-tqdm>=4.66.0",
+            "types-urllib3>=1.26.25.14",
         ],
     },
+    dependency_links=[
+        "https://github.com/pablomitchell/haba.git#egg=haba",
+        "https://github.com/pablomitchell/fida.git#egg=fida",
+    ],
 )

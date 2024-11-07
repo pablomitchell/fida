@@ -10,7 +10,7 @@ import requests_cache
 import yfinance as yf
 from loguru import logger
 from pyrate_limiter import Duration, Limiter, RequestRate, SQLiteBucket
-from requests import Session
+from requests import Session  # type: ignore
 from requests_ratelimiter import LimiterMixin
 from tqdm.auto import tqdm
 

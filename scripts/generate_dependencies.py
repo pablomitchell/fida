@@ -1,10 +1,11 @@
 # scripts/generate_dependencies.py
 import os
+from typing import Any
 
 import tomli
 
 
-def generate_setup_py(config):
+def generate_setup_py(config: dict[str, Any]) -> None:
     """Generate setup.py from pyproject.toml"""
     print("Generating setup.py...")
     setup_content = """# Generated from pyproject.toml - do not edit directly
@@ -17,12 +18,19 @@ setup(
     python_requires="{python_requires}",
     install_requires={install_requires!r},
     extras_require={extras_require!r},
+    dependency_links=[
+        "https://github.com/pablomitchell/haba.git#egg=haba",
+        "https://github.com/pablomitchell/fida.git#egg=fida"
+    ]
 )
 """.format(
         name=config["project"]["name"],
         version=config["project"]["version"],
         python_requires=config["project"]["requires-python"],
-        install_requires=config["project"]["dependencies"],
+        install_requires=[
+            dep.split(" @ ")[0] if " @ " in dep else dep
+            for dep in config["project"]["dependencies"]
+        ],
         extras_require={
             "test": config["project"]["optional-dependencies"]["test"],
             "dev": config["project"]["optional-dependencies"]["dev"],
@@ -34,7 +42,12 @@ setup(
     print("Generated setup.py")
 
 
-def write_requirements(deps, filename, include_core=False, include_test=False):
+def write_requirements(
+    deps: list[str],
+    filename: str,
+    include_core: bool = False,
+    include_test: bool = False,
+) -> None:
     """Write dependencies to a .in file"""
     print(f"\nWriting to {filename}")
     with open(filename, "w") as f:
@@ -44,12 +57,19 @@ def write_requirements(deps, filename, include_core=False, include_test=False):
             f.write("-r requirements-test.in\n")
 
         for dep in deps:
-            package = dep.partition(">=")[0].partition("==")[0].strip()
-            print(f"  {package}")
-            f.write(f"{package}\n")
+            # Handle git dependencies specially
+            if " @ git+" in dep:
+                package_name = dep.split(" @ ")[0]
+                git_url = dep.split(" @ git+")[1]
+                f.write(f"git+{git_url}#egg={package_name}\n")
+            else:
+                package = dep.partition(">=")[0].partition("==")[0].strip()
+                print(f"  {package}")
+                f.write(f"{package}\n")
 
 
-def main():
+def main() -> None:
+    """Main function to generate all dependency files."""
     print("Starting dependency generation...")
 
     # Read pyproject.toml
