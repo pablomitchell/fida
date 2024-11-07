@@ -1,7 +1,7 @@
 loguru
 lxml
 matplotlib
-nest_asyncio
+nest-asyncio
 numpy
 pandas
 pandas-datareader
