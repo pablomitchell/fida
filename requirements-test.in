@@ -1,0 +1,5 @@
+-r requirements.in
+coveralls
+freezegun
+requests-mock
+pytest

@@ -3,11 +3,11 @@ lxml
 matplotlib
 nest_asyncio
 numpy
-pandas>=2.0.0
-pandas_datareader>=0.10.0
-pyrate_limiter==2.6.0
-requests_cache
-requests_ratelimiter
+pandas
+pandas-datareader
+pyrate-limiter
+requests-cache
+requests-ratelimiter
 scipy
 setuptools
 tqdm

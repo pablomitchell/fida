@@ -1,0 +1,11 @@
+-r requirements.in
+-r requirements-test.in
+better-exceptions
+ruff
+ipython
+isort
+mypy
+pre-commit
+terminaltables
+tabulate
+types-ujson
