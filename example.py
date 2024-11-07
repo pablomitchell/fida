@@ -1,9 +1,8 @@
 import warnings
 
-warnings.simplefilter(action="ignore", category=FutureWarning)
-
 from fida import constituents, ohlcv
 
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 params = {
     "symbols": constituents.get_sp500().sample(10).ticker,

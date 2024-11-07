@@ -1,6 +1,8 @@
 # scripts/generate_dependencies.py
-import tomli
 import os
+
+import tomli
+
 
 def generate_setup_py(config):
     """Generate setup.py from pyproject.toml"""
@@ -23,13 +25,14 @@ setup(
         install_requires=config["project"]["dependencies"],
         extras_require={
             "test": config["project"]["optional-dependencies"]["test"],
-            "dev": config["project"]["optional-dependencies"]["dev"]
-        }
+            "dev": config["project"]["optional-dependencies"]["dev"],
+        },
     )
-    
+
     with open("setup.py", "w") as f:
         f.write(setup_content)
     print("Generated setup.py")
+
 
 def write_requirements(deps, filename, include_core=False, include_test=False):
     """Write dependencies to a .in file"""
@@ -39,41 +42,39 @@ def write_requirements(deps, filename, include_core=False, include_test=False):
             f.write("-r requirements.in\n")
         if include_test:
             f.write("-r requirements-test.in\n")
-        
+
         for dep in deps:
-            package = dep.partition('>=')[0].partition('==')[0].strip()
+            package = dep.partition(">=")[0].partition("==")[0].strip()
             print(f"  {package}")
             f.write(f"{package}\n")
 
+
 def main():
     print("Starting dependency generation...")
-    
+
     # Read pyproject.toml
     with open("pyproject.toml", "rb") as f:
         config = tomli.load(f)
-    
+
     # Generate setup.py
     generate_setup_py(config)
-    
+
     # Generate requirements files
-    write_requirements(
-        config["project"]["dependencies"],
-        "requirements.in"
-    )
-    
+    write_requirements(config["project"]["dependencies"], "requirements.in")
+
     write_requirements(
         config["project"]["optional-dependencies"]["test"],
         "requirements-test.in",
-        include_core=True
+        include_core=True,
     )
-    
+
     write_requirements(
         config["project"]["optional-dependencies"]["dev"],
         "requirements-dev.in",
         include_core=True,
-        include_test=True
+        include_test=True,
     )
-    
+
     # Compile with uv
     print("\nCompiling requirements files...")
     os.system("uv pip compile requirements.in -o requirements.txt")
@@ -82,8 +83,14 @@ def main():
 
     # Show generated files
     print("\nGenerated files:")
-    for filename in ["setup.py", "requirements.txt", "requirements-test.txt", "requirements-dev.txt"]:
+    for filename in [
+        "setup.py",
+        "requirements.txt",
+        "requirements-test.txt",
+        "requirements-dev.txt",
+    ]:
         print(f"- {filename}")
+
 
 if __name__ == "__main__":
     main()

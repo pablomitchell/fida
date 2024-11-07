@@ -1,20 +1,17 @@
 import asyncio
 import io
-import nest_asyncio
-import requests_cache
 import warnings
-from loguru import logger
-from typing import List, Union
 
-from pyrate_limiter import Duration, RequestRate, Limiter, SQLiteBucket
-from requests import Session
-
-from requests_ratelimiter import LimiterMixin
-
+import nest_asyncio
 import numpy as np
 import pandas as pd
 import pandas_datareader as pdr
+import requests_cache
 import yfinance as yf
+from loguru import logger
+from pyrate_limiter import Duration, Limiter, RequestRate, SQLiteBucket
+from requests import Session
+from requests_ratelimiter import LimiterMixin
 from tqdm.auto import tqdm
 
 from fida.patches import patch_pandas_datareader
@@ -23,6 +20,7 @@ nest_asyncio.apply()
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 patch_pandas_datareader()
+
 
 class CachedLimiterSession(LimiterMixin, Session):
     pass
@@ -40,7 +38,8 @@ session_tiingo = requests_cache.CachedSession(
 )
 
 
-Symbols = Union[str, List[str]]
+# Symbols = Union[str, list[str]]
+Symbols = str | list[str]
 
 
 async def read_symbol_yahoo_async(
@@ -67,7 +66,7 @@ async def read_symbols_yahoo_async(
         symbols = [symbols]
 
     dfs = []
-    for symbol in tqdm(symbols, desc=f"Yahoo Download"):
+    for symbol in tqdm(symbols, desc="Yahoo Download"):
         df = await read_symbol_yahoo_async(
             symbol=symbol, start=start, end=end, field=field
         )
@@ -190,7 +189,7 @@ async def read_symbols_tiingo_async(
         symbols = [symbols]
 
     dfs = []
-    for symbol in tqdm(symbols, desc=f"Tiingo Download"):
+    for symbol in tqdm(symbols, desc="Tiingo Download"):
         df = await read_symbol_tiingo_async(
             symbol=symbol,
             start=start,
@@ -307,7 +306,7 @@ async def read_msymbols_tiingo_async(
     if isinstance(symbols, str):
         symbols = [symbols]
 
-    for symbol in tqdm(symbols, desc=f"Tiingo Download"):
+    for symbol in tqdm(symbols, desc="Tiingo Download"):
         out[symbol] = await read_msymbol_tiingo_async(
             symbol=symbol, start=start, end=end
         )

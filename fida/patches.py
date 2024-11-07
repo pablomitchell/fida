@@ -2,14 +2,16 @@
 import pandas as pd
 from pandas_datareader.tiingo import TiingoDailyReader
 
+
 def patch_pandas_datareader():
     """Patch pandas_datareader to work with newer pandas versions"""
+
     def patched_read(self):
         """Read data from Tiingo"""
         try:
             params = {
-                'start': self.start.strftime('%Y-%m-%d'),
-                'end': self.end.strftime('%Y-%m-%d'),
+                "start": self.start.strftime("%Y-%m-%d"),
+                "end": self.end.strftime("%Y-%m-%d"),
             }
             df = self._read_one_data(self.url, params=params)
             if isinstance(df, list):

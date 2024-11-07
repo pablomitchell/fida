@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 import pandas as pd
-import pandas_datareader as pdr
 
 
 def get_sp500():
